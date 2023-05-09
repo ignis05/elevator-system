@@ -4,8 +4,7 @@ export interface ElevatorSystem {
 	 * The system automatically assigns an elevator to complete the pickup.
 	 * The system prioritises using idle elevators for pickups over ones already moving with people to utilise as much of its elevators as possible,
 	 * and avoid having large groups of people in a single elevator.
-	 * Elevators will ignore all other pickup orders when having one assigned to them (avoids issue where no elevator would arrive at top floor, when they keep getting intercepted on lower floors)
-	 * Elevators dropping people off will pick up any pickup orders that declared the same direction as the elevator is currently moving in
+	 * Elevators will complete any pickup orders that declared the direction matching its current direction and its order's direction
 	 * @param floor the floor to pick up from
 	 * @param direction the intended direction
 	 */
@@ -67,7 +66,7 @@ export class Elevator {
 	}
 
 	get hasDestinations() {
-		return this.destinations.size > 0
+		return this.destinations.size > 0 || this.currentPickupTask
 	}
 
 	// returns next destination based on priority: pickup order > farthest stop in current direction > any stop > current floor
@@ -80,7 +79,7 @@ export class Elevator {
 		return this.currentFloor
 	}
 
-	private updateMoveDirection() {
+	updateMoveDirection() {
 		if (this.currentDestination === this.currentFloor) throw new Error('attempted to update move direction without any destinations')
 		if (this.currentDestination > this.currentFloor) this.moveDirection = 'up'
 		else this.moveDirection = 'down'
@@ -123,22 +122,26 @@ export class Elevator {
 			return
 		}
 
-		// move elevator based on destination, not direction.
-		// that way "pickup" tasks can be set without direction, so stumbling upon any other pickup task will immediately override it
 		this.currentFloor += this.currentDestination > this.currentFloor ? 1 : -1
 
 		// check if it reached a destination, remove it and stop elevator if yes
 		if (this.destinations.delete(this.currentFloor)) this.status = 'stopped'
 
-		// check if it reached a pickup task, remove it and stop elevator if yes
+		// if elevator reached a pickup task, remove it and stop elevator, set direction to task direction
 		if (this.currentPickupTask?.floor === this.currentFloor) {
+			this.moveDirection = this.currentPickupTask.direction
 			this.currentPickupTask = null
 			this.status = 'stopped'
 		}
 	}
 
+	// can only do pickup tasks on the way if it doesn't have one alredy or if the one it has matches directions
 	canClearPickupTask(task: PickupTask) {
-		return task.floor === this.currentFloor && (task.direction === this.moveDirection || this.moveDirection === null)
+		return (
+			task.floor === this.currentFloor &&
+			task.direction === this.moveDirection &&
+			(!this.currentPickupTask || this.currentPickupTask.direction === task.direction)
+		)
 	}
 }
 
@@ -196,17 +199,10 @@ export default class ElevatorManager implements ElevatorSystem {
 
 			if (elevator.isIdle) continue
 
-			// check if elevator can complete pickup task here - but only if elevator is not alredy on way to another pickup
-			if (elevator.currentPickupTask) continue
+			// check if elevator can complete a pickup task here
 			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t))
 			if (taskToClearI > -1) {
 				this.pickupTasks.splice(taskToClearI, 1)
-
-				// if elevator was doing another pickup task, return it to the pool
-				if (elevator.currentPickupTask) {
-					this.pickupTasks.push(elevator.currentPickupTask)
-					elevator.currentPickupTask = null
-				}
 				elevator.status = 'stopped'
 			}
 		}
@@ -220,7 +216,7 @@ export default class ElevatorManager implements ElevatorSystem {
 			this.pickupTasks.splice(this.pickupTasks.indexOf(pickup), 1)
 			closestIdleElevator.currentPickupTask = pickup
 			closestIdleElevator.status = 'moving'
-			closestIdleElevator.moveDirection = null
+			closestIdleElevator.updateMoveDirection()
 		}
 	}
 }
