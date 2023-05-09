@@ -97,6 +97,11 @@ export class Elevator {
 		if (this.status === 'idle') {
 			// idling elevator recived button press from inside
 			if (this.hasDestinations) {
+				// received the same destination as the floor it's currently on - stop it for one step
+				if (this.destinations.delete(this.currentFloor)) {
+					this.status = 'stopped'
+					return
+				}
 				this.status = 'moving'
 				this.updateMoveDirection()
 			}
