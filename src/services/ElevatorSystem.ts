@@ -234,13 +234,12 @@ export default class ElevatorManager implements ElevatorSystem {
 		}
 
 		// assign any available pickups to idle elevators
-		for (let pickup of this.pickupTasks) {
-			if (!this.idleElevators.length) break // no more idle elevators left
+		while (this.pickupTasks.length > 0 && this.idleElevators.length > 0) {
+			const task = this.pickupTasks.shift()!
 			const closestIdleElevator = this.idleElevators.reduce((prev, curr) =>
-				Math.abs(curr.currentFloor - pickup.floor) < Math.abs(prev.currentFloor - pickup.floor) ? curr : prev
+				Math.abs(curr.currentFloor - task.floor) < Math.abs(prev.currentFloor - task.floor) ? curr : prev
 			)
-			this.pickupTasks.splice(this.pickupTasks.indexOf(pickup), 1)
-			closestIdleElevator.currentPickupTask = pickup
+			closestIdleElevator.currentPickupTask = task
 			closestIdleElevator.status = 'moving'
 			closestIdleElevator.updateMoveDirection()
 		}
