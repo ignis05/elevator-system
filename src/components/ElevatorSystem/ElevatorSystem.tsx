@@ -50,7 +50,9 @@ function ElevatorSystem() {
 			<div className="headerBar">
 				Elevators: <input type="number" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} />
 				Floors: <input type="text" value={floorsInput} onChange={(e) => setfloorsInput(e.target.value)} />
-				<button onClick={() => simulationStep()}>STEP</button>
+				<button className="stepBtn" onClick={() => simulationStep()}>
+					STEP
+				</button>
 			</div>
 			<div className="displayWrapper">
 				<table>
@@ -80,7 +82,7 @@ function ElevatorSystem() {
 								</td>
 								{elevatorSystem.elevators.map((el) => (
 									<td
-										className={`floorField ${el.currentFloor === floor.number ? `elevator-${el.status}` : ''}`}
+										className={`floorField  ${el.currentFloor === floor.number ? `elevator-${el.status}` : 'activeBtn'}`}
 										key={el.id}
 										onClick={() => {
 											elevatorSystem.selectFloor(el.id, floor.number)
@@ -95,6 +97,34 @@ function ElevatorSystem() {
 						))}
 					</tbody>
 				</table>
+			</div>
+			<div className="legend">
+				<h4>Controls:</h4>
+				<ul>
+					<li>
+						Press <b>UP/DOWN</b> buttons to simulate calling the elevator to the specified floor.
+					</li>
+					<li>Press on any of the floors in elevator's column, to simulate selecting that floor on that elevator's internal panel.</li>
+				</ul>
+				<h4>Legend:</h4>
+				<ul>
+					<li>
+						<b>X</b> - This floor has been selected from this elevator's panel. The elevator will stop there to let people out.
+					</li>
+					<li>
+						<b>&lt;---</b> - This floor is this elevator's current destination.
+					</li>
+					<li>
+						<div className="floorField legend-field elevator-idle"></div> - Elevator is idle at this floor because it has nothing to do.
+					</li>
+					<li>
+						<div className="floorField legend-field elevator-stopped"></div> - Elevator is stopped at this floor to let people in or out. It
+						will get moving in the next simulation step.
+					</li>
+					<li>
+						<div className="floorField legend-field elevator-moving"></div> - Elevator is moving through this floor.
+					</li>
+				</ul>
 			</div>
 		</div>
 	)

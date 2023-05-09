@@ -1,9 +1,22 @@
+.main {
+	padding: 5px;
+}
+
+button {
+	cursor: pointer;
+}
+
 .floorField {
 	border: 1px solid black;
 	width: 100px;
 	text-align: center;
 	font-size: 1.2em;
+	user-select: none;
 	cursor: pointer;
+}
+
+.activeBtn:hover {
+	background-color: lightgray;
 }
 
 .btPressed {
@@ -20,4 +33,24 @@
 
 .elevator-moving {
 	background-color: green;
+}
+
+.stepBtn {
+	display: block;
+	font-size: 1.2em;
+}
+
+.legend h4 {
+	margin-bottom: 0;
+}
+.legend ul {
+	margin-top: 0;
+}
+
+.legend-field {
+	display: inline-block;
+	width: 50px;
+	height: 25px;
+	position: relative;
+	top: 7px;
 }
