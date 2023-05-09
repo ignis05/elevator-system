@@ -57,7 +57,8 @@ function ElevatorSystem() {
 	return (
 		<div className="main">
 			<div className="headerBar">
-				Elevators: <input type="number" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} />
+				Elevators:{' '}
+				<input type="number" min="0" step="1" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} />
 				Floors: <input type="text" value={floorsInput} onChange={(e) => setfloorsInput(e.target.value)} />
 				<button className="stepBtn" onClick={() => simulationStep()}>
 					STEP
@@ -136,6 +137,27 @@ function ElevatorSystem() {
 					<li>
 						<div className="floorField legend-field elevator-moving"></div> - Elevator is moving through this floor.
 					</li>
+				</ul>
+				<h4>Implementation notes:</h4>
+				<ul>
+					<li>
+						The system assumes elevator speeds are fast and the stops are slows, so it prioritises utilising idle elevators over adding
+						multiple groups of people to the same elevator passing by.
+					</li>
+					<li>Whenever elevator simulates stopping on the floor and opening doors, it will change its status to "stopped" for one step.</li>
+					<li>
+						If an elevator arrives at the floor it was called to pickup people from, but receives no input during the "stop" step, it
+						assumes no-one entered or no button was pressed and the system might assign it another pickup task.
+					</li>
+					<li>
+						The elevator doesn't block in any way situations where someone calls it with "up" input and decides to go down (or the reverse).
+						However, it will prioritise going in the declared direction if multiple floors are selected on its panel after a pickup.
+					</li>
+					<li>
+						If both "up" and "down" are pressed on the same floor, the system is likely to send two separate elevators and assumes people
+						will only enter the elevator matching their chosen travel direction.
+					</li>
+					<li>If there's only one elevator in the system, it will complete all pickups from all floor it passes.</li>
 				</ul>
 			</div>
 		</div>
