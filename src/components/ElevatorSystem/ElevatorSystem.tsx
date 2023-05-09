@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import ElevatorManager, { Direction, Elevator, PickupTask } from '../../services/ElevatorSystem'
+import ElevatorManager from '../../services/ElevatorSystem'
 import './ElevatorSystem.css'
 
 type Floor = {
@@ -8,7 +8,7 @@ type Floor = {
 	pickupDown: boolean
 }
 
-const elevatorSystem = new ElevatorManager(3)
+const elevatorSystem = new ElevatorManager()
 
 function ElevatorSystem() {
 	const [elevatorCount, setElevatorCount] = useState<number>(3)
@@ -40,11 +40,6 @@ function ElevatorSystem() {
 		updateFloors()
 	}, [elevatorCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
-	const callElevatorHandler = (floor: number, direction: Direction) => {
-		elevatorSystem.pickup(floor, direction)
-		updateFloors()
-	}
-
 	const simulationStep = () => {
 		elevatorSystem.step()
 		updateFloors()
@@ -64,15 +59,37 @@ function ElevatorSystem() {
 							<tr key={floor.number}>
 								<td>{floor.number}</td>
 								<td>
-									<button className={floor.pickupUp ? 'btPressed' : undefined} onClick={() => callElevatorHandler(floor.number, 'up')}>
+									<button
+										className={floor.pickupUp ? 'btPressed' : undefined}
+										onClick={() => {
+											elevatorSystem.pickup(floor.number, 'up')
+											updateFloors()
+										}}
+									>
 										UP
 									</button>
-									<button className={floor.pickupDown ? 'btPressed' : undefined} onClick={() => callElevatorHandler(floor.number, 'down')}>
+									<button
+										className={floor.pickupDown ? 'btPressed' : undefined}
+										onClick={() => {
+											elevatorSystem.pickup(floor.number, 'down')
+											updateFloors()
+										}}
+									>
 										DOWN
 									</button>
 								</td>
 								{elevatorSystem.elevators.map((el) => (
-									<td className={`floorField ${el.currentFloor === floor.number ? `elevator-${el.status}` : ''}`} key={el.id}></td>
+									<td
+										className={`floorField ${el.currentFloor === floor.number ? `elevator-${el.status}` : ''}`}
+										key={el.id}
+										onClick={() => {
+											elevatorSystem.selectFloor(el.id, floor.number)
+											updateFloors()
+										}}
+									>
+										{el.destinations.has(floor.number) && 'X'}
+										{el.currentDestination === floor.number && ' <---'}
+									</td>
 								))}
 							</tr>
 						))}

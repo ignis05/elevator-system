@@ -10,6 +10,7 @@ export interface ElevatorSystem {
 	 * @param direction the intended direction
 	 */
 	pickup: (floor: number, direction: Direction) => void
+
 	/**
 	 * Selects a floor for a specified elevator, just like pressing a button on its inside panel would.
 	 * This elevator will then have to arrive and stop at the choosen floor, though it might not go there directly if other floors were already selected.
@@ -17,17 +18,25 @@ export interface ElevatorSystem {
 	 * @param floor the chosen floor
 	 */
 	selectFloor: (elevatorID: number, floor: number) => void
+
 	/**
 	 * Executes one step of this system's work.
 	 * Elevators can move one floor up or down during a single step.
 	 * Elevators also stop for a whole step's duration at designated floors when letting people in or out.
 	 */
 	step: () => void
+
 	/**
 	 * Array which holds all elevators controlled by the system. Each elevator has its id, current floor, destination and various other parameters.
 	 * The state of each elevator can also be manually modified by its reference from this array.
 	 */
 	readonly elevators: Elevator[]
+
+	/**
+	 * Returns all pickup requests queued in the system.
+	 * This only includes the external requests for any elevator, the destinations queued directly for a specific elevator (from inside) are in the "Elevator" object itself
+	 */
+	getAllTasks(): PickupTask[]
 }
 
 export type Direction = 'up' | 'down'
@@ -61,17 +70,38 @@ export class Elevator {
 		return this.destinations.size > 0
 	}
 
+	// returns next destination based on priority: pickup order > farthest stop in current direction > any stop > current floor
 	get currentDestination() {
 		if (this.currentPickupTask) return this.currentPickupTask.floor
 
 		if (this.moveDirection === 'up') return Math.max(...this.destinations)
 		if (this.moveDirection === 'down') return Math.min(...this.destinations)
+		if (this.destinations.size > 0) return this.destinations.values().next().value
 		return this.currentFloor
+	}
+
+	private updateMoveDirection() {
+		if (this.currentDestination === this.currentFloor) throw new Error('attempted to update move direction without any destinations')
+		if (this.currentDestination > this.currentFloor) this.moveDirection = 'up'
+		else this.moveDirection = 'down'
+	}
+
+	// flip move directions if no more stops are in the same direction
+	private attemptToFlipMoveDirection() {
+		if (this.moveDirection === 'up' && this.currentDestination < this.currentFloor) this.moveDirection = 'down'
+		if (this.moveDirection === 'down' && this.currentDestination > this.currentFloor) this.moveDirection = 'up'
 	}
 
 	moveFloor() {
 		// elevator idling
-		if (this.status === 'idle') return
+		if (this.status === 'idle') {
+			// idling elevator recived button press from inside
+			if (this.hasDestinations) {
+				this.status = 'moving'
+				this.updateMoveDirection()
+			}
+			return
+		}
 
 		// elevator stopped to let people in or out - clear stopped status this update and move normally on the next
 		if (this.status === 'stopped') {
@@ -83,16 +113,8 @@ export class Elevator {
 			}
 
 			this.status = 'moving'
-
-			// flip move directions if no more stops are in the same direction
-			if (this.moveDirection === 'up' && this.currentDestination < this.currentFloor) return (this.moveDirection = 'down')
-			if (this.moveDirection === 'down' && this.currentDestination > this.currentFloor) return (this.moveDirection = 'up')
-			// decide move direction if it wasn't assigned before
-			if (!this.moveDirection) {
-				if (this.currentDestination > this.currentFloor) this.moveDirection = 'up'
-				else this.moveDirection = 'down'
-			}
-
+			this.attemptToFlipMoveDirection()
+			if (!this.moveDirection) this.updateMoveDirection() // decide move direction if it wasn't assigned before
 			return
 		}
 
@@ -120,7 +142,7 @@ export default class ElevatorManager implements ElevatorSystem {
 	readonly elevators: Elevator[] = []
 	pickupTasks: PickupTask[] = []
 
-	constructor(elevatorCount: number) {
+	constructor(elevatorCount: number = 3) {
 		this.elevatorCount = elevatorCount
 
 		for (let i = 0; i < elevatorCount; i++) {
@@ -164,8 +186,10 @@ export default class ElevatorManager implements ElevatorSystem {
 
 	step() {
 		// move active elevators
-		for (let elevator of this.activeElevators) {
-			elevator.moveFloor()
+		for (let elevator of this.elevators) {
+			elevator.moveFloor() // can cause idle elevators to start moving if they have received a destination
+
+			if (elevator.isIdle) continue
 
 			// check if elevator can complete pickup task here - but only if elevator is not alredy on way to another pickup
 			if (elevator.currentPickupTask) continue
