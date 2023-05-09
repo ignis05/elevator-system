@@ -136,8 +136,9 @@ export class Elevator {
 	}
 
 	// can only do pickup tasks on the way if it doesn't have one alredy or if the one it has matches directions
-	canClearPickupTask(task: PickupTask, limits?: FloorLimits) {
+	canClearPickupTask(task: PickupTask, limits?: FloorLimits, isSoleElevator: boolean = false) {
 		if (task.floor !== this.currentFloor) return false // not on the current floor
+		if (isSoleElevator) return true // sole elevator always picks up everyone from a floor, there's no other elevator to wait for anyway
 		if (task.direction !== this.moveDirection) return false // not moving in the same direcion
 
 		// has assigned pickup
@@ -225,7 +226,7 @@ export default class ElevatorManager implements ElevatorSystem {
 			if (elevator.isIdle) continue
 
 			// check if elevator can complete a pickup task here
-			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t, this.floorLimits))
+			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t, this.floorLimits, this.elevatorCount === 1))
 			if (taskToClearI > -1) {
 				this.pickupTasks.splice(taskToClearI, 1)
 				elevator.status = 'stopped'
