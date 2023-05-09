@@ -1,0 +1,14 @@
+.floorField {
+	border: 1px solid black;
+	width: 100px;
+	text-align: center;
+	font-size: 1.2em;
+}
+
+.btPressed {
+	background-color: green;
+}
+
+.hasElevator {
+	background-color: green;
+}
