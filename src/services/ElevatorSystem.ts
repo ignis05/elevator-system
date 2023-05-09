@@ -136,35 +136,50 @@ export class Elevator {
 	}
 
 	// can only do pickup tasks on the way if it doesn't have one alredy or if the one it has matches directions
-	canClearPickupTask(task: PickupTask) {
-		return (
-			task.floor === this.currentFloor &&
-			task.direction === this.moveDirection &&
-			(!this.currentPickupTask || this.currentPickupTask.direction === task.direction)
-		)
+	canClearPickupTask(task: PickupTask, limits?: FloorLimits) {
+		if (task.floor !== this.currentFloor) return false // not on the current floor
+		if (task.direction !== this.moveDirection) return false // not moving in the same direcion
+
+		// has assigned pickup
+		if (this.currentPickupTask) {
+			// complete any "up" pickups when going to top floor and "down" pickups for bottom floor
+			if (this.currentPickupTask.floor === limits?.top && task.direction === 'up') return true
+			else if (this.currentPickupTask.floor === limits?.bottom && task.direction === 'down') return true
+
+			if (this.currentPickupTask.direction !== task.direction) return false // will not be moving in the same direction after completing assigned pickup
+		}
+
+		return true
 	}
 }
+
+export type FloorLimits = { top: number; bottom: number } | null
 
 export default class ElevatorManager implements ElevatorSystem {
 	elevatorCount: number
 	readonly elevators: Elevator[] = []
 	pickupTasks: PickupTask[] = []
+	floorLimits: FloorLimits
 
-	constructor(elevatorCount: number = 3) {
+	constructor(elevatorCount: number = 3, floorLimits: FloorLimits = null) {
 		this.elevatorCount = elevatorCount
 
 		for (let i = 0; i < elevatorCount; i++) {
 			this.elevators.push(new Elevator(i))
 		}
+
+		this.floorLimits = floorLimits
 	}
 
 	pickup(floor: number, direction: Direction) {
+		if (!this.isWithinLimits(floor)) throw new Error('specified floor is outside of set limits')
 		if (!this.pickupTasks.find((p) => p.floor === floor && p.direction === direction)) {
 			this.pickupTasks.push({ floor, direction })
 		}
 	}
 
 	selectFloor(elevatorID: number, floor: number) {
+		if (!this.isWithinLimits(floor)) throw new Error('specified floor is outside of set limits')
 		const elevator = this.elevators.find((e) => e.id === elevatorID)
 		if (!elevator) throw new Error('invalid elevator id')
 
@@ -184,6 +199,16 @@ export default class ElevatorManager implements ElevatorSystem {
 		this.elevatorCount = newCount
 	}
 
+	// pass null to disable floor limits
+	setFloorLimits(newLimits: FloorLimits) {
+		this.floorLimits = newLimits
+	}
+
+	private isWithinLimits(floor: number) {
+		if (!this.floorLimits) return true
+		return floor <= this.floorLimits.top && floor >= this.floorLimits.bottom
+	}
+
 	get activeElevators() {
 		return this.elevators.filter((e) => !e.isIdle)
 	}
@@ -200,7 +225,7 @@ export default class ElevatorManager implements ElevatorSystem {
 			if (elevator.isIdle) continue
 
 			// check if elevator can complete a pickup task here
-			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t))
+			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t, this.floorLimits))
 			if (taskToClearI > -1) {
 				this.pickupTasks.splice(taskToClearI, 1)
 				elevator.status = 'stopped'

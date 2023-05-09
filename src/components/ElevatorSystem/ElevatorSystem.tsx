@@ -8,11 +8,15 @@ type Floor = {
 	pickupDown: boolean
 }
 
+const initElevatorCount = 3
+const initMinFloor = -2
+const initMaxFloor = 7
+
 const elevatorSystem = new ElevatorManager()
 
 function ElevatorSystem() {
-	const [elevatorCount, setElevatorCount] = useState<number>(3)
-	const [floorsInput, setfloorsInput] = useState<string>('-2:7')
+	const [elevatorCount, setElevatorCount] = useState<number>(initElevatorCount)
+	const [floorsInput, setfloorsInput] = useState<string>(`${initMinFloor}:${initMaxFloor}`)
 	const [floors, setfloors] = useState<Floor[]>([])
 
 	const updateFloors = () => {
@@ -33,7 +37,12 @@ function ElevatorSystem() {
 		setfloors(floorsArray)
 	}
 
-	useEffect(() => updateFloors(), [floorsInput]) // eslint-disable-line react-hooks/exhaustive-deps
+	useEffect(() => {
+		const minFloor = parseInt(floorsInput.split(':')[0])
+		const maxFloor = parseInt(floorsInput.split(':')[1])
+		elevatorSystem.setFloorLimits({ top: maxFloor, bottom: minFloor })
+		updateFloors()
+	}, [floorsInput]) // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		elevatorSystem.setElevatorCount(elevatorCount)
@@ -67,15 +76,18 @@ function ElevatorSystem() {
 											elevatorSystem.pickup(floor.number, 'up')
 											updateFloors()
 										}}
+										disabled={floor.number === elevatorSystem.floorLimits?.top}
 									>
 										UP
 									</button>
+
 									<button
 										className={floor.pickupDown ? 'btPressed' : undefined}
 										onClick={() => {
 											elevatorSystem.pickup(floor.number, 'down')
 											updateFloors()
 										}}
+										disabled={floor.number === elevatorSystem.floorLimits?.bottom}
 									>
 										DOWN
 									</button>
