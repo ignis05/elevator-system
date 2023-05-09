@@ -9,6 +9,14 @@
 	background-color: green;
 }
 
-.hasElevator {
+.elevator-idle {
+	background-color: red;
+}
+
+.elevator-stopped {
+	background-color: yellow;
+}
+
+.elevator-moving {
 	background-color: green;
 }

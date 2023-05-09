@@ -11,8 +11,7 @@ type Floor = {
 const elevatorSystem = new ElevatorManager(3)
 
 function ElevatorSystem() {
-	// const [elevatorCount, setElevatorCount] = useState<number>(3)
-
+	const [elevatorCount, setElevatorCount] = useState<number>(3)
 	const [floorsInput, setfloorsInput] = useState<string>('-2:7')
 	const [floors, setfloors] = useState<Floor[]>([])
 
@@ -34,9 +33,12 @@ function ElevatorSystem() {
 		setfloors(floorsArray)
 	}
 
+	useEffect(() => updateFloors(), [floorsInput]) // eslint-disable-line react-hooks/exhaustive-deps
+
 	useEffect(() => {
+		elevatorSystem.setElevatorCount(elevatorCount)
 		updateFloors()
-	}, [floorsInput])
+	}, [elevatorCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const callElevatorHandler = (floor: number, direction: Direction) => {
 		elevatorSystem.pickup(floor, direction)
@@ -51,7 +53,7 @@ function ElevatorSystem() {
 	return (
 		<div className="main">
 			<div className="headerBar">
-				{/* Elevators: <input type="number" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} /> */}
+				Elevators: <input type="number" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} />
 				Floors: <input type="text" value={floorsInput} onChange={(e) => setfloorsInput(e.target.value)} />
 				<button onClick={() => simulationStep()}>STEP</button>
 			</div>
@@ -60,8 +62,8 @@ function ElevatorSystem() {
 					<tbody>
 						{floors.map((floor) => (
 							<tr key={floor.number}>
+								<td>{floor.number}</td>
 								<td>
-									<span>{floor.number}</span>
 									<button className={floor.pickupUp ? 'btPressed' : undefined} onClick={() => callElevatorHandler(floor.number, 'up')}>
 										UP
 									</button>
@@ -70,7 +72,7 @@ function ElevatorSystem() {
 									</button>
 								</td>
 								{elevatorSystem.elevators.map((el) => (
-									<td className={`floorField ${el.currentFloor === floor.number ? 'hasElevator' : ''}`} key={el.id}></td>
+									<td className={`floorField ${el.currentFloor === floor.number ? `elevator-${el.status}` : ''}`} key={el.id}></td>
 								))}
 							</tr>
 						))}

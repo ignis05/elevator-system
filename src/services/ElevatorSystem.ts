@@ -4,6 +4,8 @@ export interface ElevatorSystem {
 	 * The system automatically assigns an elevator to complete the pickup.
 	 * The system prioritises using idle elevators for pickups over ones already moving with people to utilise as much of its elevators as possible,
 	 * and avoid having large groups of people in a single elevator.
+	 * Elevators will ignore all other pickup orders when having one assigned to them (avoids issue where no elevator would arrive at top floor, when they keep getting intercepted on lower floors)
+	 * Elevators dropping people off will pick up any pickup orders that declared the same direction as the elevator is currently moving in
 	 * @param floor the floor to pick up from
 	 * @param direction the intended direction
 	 */
@@ -100,6 +102,12 @@ export class Elevator {
 
 		// check if it reached a destination, remove it and stop elevator if yes
 		if (this.destinations.delete(this.currentFloor)) this.status = 'stopped'
+
+		// check if it reached a pickup task, remove it and stop elevator if yes
+		if (this.currentPickupTask?.floor === this.currentFloor) {
+			this.currentPickupTask = null
+			this.status = 'stopped'
+		}
 	}
 
 	canClearPickupTask(task: PickupTask) {
@@ -108,7 +116,7 @@ export class Elevator {
 }
 
 export default class ElevatorManager implements ElevatorSystem {
-	readonly elevatorCount: number
+	elevatorCount: number
 	readonly elevators: Elevator[] = []
 	pickupTasks: PickupTask[] = []
 
@@ -138,6 +146,14 @@ export default class ElevatorManager implements ElevatorSystem {
 		return this.pickupTasks.concat(elevatorTasks)
 	}
 
+	setElevatorCount(newCount: number) {
+		while (newCount > this.elevators.length) this.elevators.push(new Elevator(this.elevators.length))
+		if (newCount < this.elevatorCount) {
+			this.elevators.splice(newCount)
+		}
+		this.elevatorCount = newCount
+	}
+
 	get activeElevators() {
 		return this.elevators.filter((e) => !e.isIdle)
 	}
@@ -151,7 +167,8 @@ export default class ElevatorManager implements ElevatorSystem {
 		for (let elevator of this.activeElevators) {
 			elevator.moveFloor()
 
-			// check if elevator can complete pickup task here
+			// check if elevator can complete pickup task here - but only if elevator is not alredy on way to another pickup
+			if (elevator.currentPickupTask) continue
 			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t))
 			if (taskToClearI > -1) {
 				this.pickupTasks.splice(taskToClearI, 1)
@@ -163,15 +180,11 @@ export default class ElevatorManager implements ElevatorSystem {
 				}
 				elevator.status = 'stopped'
 			}
-			// check if elevator can finish its assigned pickup task here
-			else if (elevator.currentPickupTask && elevator.canClearPickupTask(elevator.currentPickupTask)) {
-				elevator.currentPickupTask = null
-				elevator.status = 'stopped'
-			}
 		}
 
 		// assign any available pickups to idle elevators
 		for (let pickup of this.pickupTasks) {
+			if (!this.idleElevators.length) break // no more idle elevators left
 			const closestIdleElevator = this.idleElevators.reduce((prev, curr) =>
 				Math.abs(curr.currentFloor - pickup.floor) < Math.abs(prev.currentFloor - pickup.floor) ? curr : prev
 			)
