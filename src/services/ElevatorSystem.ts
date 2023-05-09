@@ -28,14 +28,14 @@ export interface ElevatorSystem {
 	readonly elevators: Elevator[]
 }
 
-type Direction = 'up' | 'down'
+export type Direction = 'up' | 'down'
 
-interface PickupTask {
+export interface PickupTask {
 	floor: number
 	direction: Direction
 }
 
-class Elevator {
+export class Elevator {
 	readonly id: number
 	currentFloor: number
 	moveDirection: Direction | null = null
@@ -62,8 +62,8 @@ class Elevator {
 	get currentDestination() {
 		if (this.currentPickupTask) return this.currentPickupTask.floor
 
-		if (this.moveDirection == 'up') return Math.max(...this.destinations)
-		if (this.moveDirection == 'down') return Math.min(...this.destinations)
+		if (this.moveDirection === 'up') return Math.max(...this.destinations)
+		if (this.moveDirection === 'down') return Math.min(...this.destinations)
 		return this.currentFloor
 	}
 
@@ -103,11 +103,11 @@ class Elevator {
 	}
 
 	canClearPickupTask(task: PickupTask) {
-		return task.floor == this.currentFloor && (task.direction == this.moveDirection || this.moveDirection === null)
+		return task.floor === this.currentFloor && (task.direction === this.moveDirection || this.moveDirection === null)
 	}
 }
 
-export class ElevatorManager implements ElevatorSystem {
+export default class ElevatorManager implements ElevatorSystem {
 	readonly elevatorCount: number
 	readonly elevators: Elevator[] = []
 	pickupTasks: PickupTask[] = []
@@ -121,16 +121,21 @@ export class ElevatorManager implements ElevatorSystem {
 	}
 
 	pickup(floor: number, direction: Direction) {
-		if (!this.pickupTasks.find((p) => p.floor == floor && p.direction == direction)) {
+		if (!this.pickupTasks.find((p) => p.floor === floor && p.direction === direction)) {
 			this.pickupTasks.push({ floor, direction })
 		}
 	}
 
 	selectFloor(elevatorID: number, floor: number) {
 		const elevator = this.elevators.find((e) => e.id === elevatorID)
-		if (!elevator) throw 'invalid elevator id'
+		if (!elevator) throw new Error('invalid elevator id')
 
 		elevator.destinations.add(floor)
+	}
+
+	getAllTasks() {
+		let elevatorTasks = this.elevators.map((el) => el.currentPickupTask).filter((t) => t !== null) as PickupTask[]
+		return this.pickupTasks.concat(elevatorTasks)
 	}
 
 	get activeElevators() {
@@ -146,21 +151,22 @@ export class ElevatorManager implements ElevatorSystem {
 		for (let elevator of this.activeElevators) {
 			elevator.moveFloor()
 
-			// check if any pickup can be completed at current position
-			const taskToClearI = this.pickupTasks.findIndex(elevator.canClearPickupTask)
+			// check if elevator can complete pickup task here
+			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t))
 			if (taskToClearI > -1) {
-				const task = this.pickupTasks.splice(taskToClearI, 1)[0]
+				this.pickupTasks.splice(taskToClearI, 1)
 
-				// check if this was original task the elevator was going for - if not, return it to the pool
-				if (
-					elevator.currentPickupTask &&
-					(task.floor != elevator.currentPickupTask.floor || task.direction != elevator.currentPickupTask.direction)
-				) {
+				// if elevator was doing another pickup task, return it to the pool
+				if (elevator.currentPickupTask) {
 					this.pickupTasks.push(elevator.currentPickupTask)
+					elevator.currentPickupTask = null
 				}
-
 				elevator.status = 'stopped'
+			}
+			// check if elevator can finish its assigned pickup task here
+			else if (elevator.currentPickupTask && elevator.canClearPickupTask(elevator.currentPickupTask)) {
 				elevator.currentPickupTask = null
+				elevator.status = 'stopped'
 			}
 		}
 
