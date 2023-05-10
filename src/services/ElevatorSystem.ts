@@ -70,12 +70,15 @@ export class Elevator {
 	}
 
 	// returns next destination based on priority: pickup order > farthest stop in current direction > any stop > current floor
-	get currentDestination() {
+	get currentDestination(): number {
 		if (this.currentPickupTask) return this.currentPickupTask.floor
 
-		if (this.moveDirection === 'up') return Math.max(...this.destinations)
-		if (this.moveDirection === 'down') return Math.min(...this.destinations)
-		if (this.destinations.size > 0) return this.destinations.values().next().value
+		if (this.hasDestinations) {
+			if (this.moveDirection === 'up') return Math.max(...this.destinations)
+			if (this.moveDirection === 'down') return Math.min(...this.destinations)
+			return this.destinations.values().next().value
+		}
+
 		return this.currentFloor
 	}
 
