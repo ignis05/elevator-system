@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/elevator-system/static/css/main.3967b163.css",
+    "main.js": "/elevator-system/static/js/main.d0551ad4.js",
+    "static/js/787.5c6dc505.chunk.js": "/elevator-system/static/js/787.5c6dc505.chunk.js",
+    "index.html": "/elevator-system/index.html",
+    "main.3967b163.css.map": "/elevator-system/static/css/main.3967b163.css.map",
+    "main.d0551ad4.js.map": "/elevator-system/static/js/main.d0551ad4.js.map",
+    "787.5c6dc505.chunk.js.map": "/elevator-system/static/js/787.5c6dc505.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3967b163.css",
+    "static/js/main.d0551ad4.js"
+  ]
+}
