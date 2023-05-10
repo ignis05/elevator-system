@@ -164,6 +164,7 @@ export default class ElevatorManager implements ElevatorSystem {
 	readonly elevators: Elevator[] = []
 	pickupTasks: PickupTask[] = []
 	floorLimits: FloorLimits
+	soleElevatorMode: boolean = false
 
 	constructor(elevatorCount: number = 3, floorLimits: FloorLimits = null) {
 		this.elevatorCount = elevatorCount
@@ -229,7 +230,7 @@ export default class ElevatorManager implements ElevatorSystem {
 			if (elevator.isIdle) continue
 
 			// check if elevator can complete a pickup task here
-			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t, this.floorLimits, this.elevatorCount === 1))
+			const taskToClearI = this.pickupTasks.findIndex((t) => elevator.canClearPickupTask(t, this.floorLimits, this.soleElevatorMode))
 			if (taskToClearI > -1) {
 				this.pickupTasks.splice(taskToClearI, 1)
 				elevator.status = 'stopped'
@@ -246,5 +247,16 @@ export default class ElevatorManager implements ElevatorSystem {
 			closestIdleElevator.status = 'moving'
 			closestIdleElevator.updateMoveDirection()
 		}
+	}
+
+	/**
+	 * Enables special behavior, where elevator will pick up all people from each floor it passes, regardless of their declared direction.
+	 * This might be desireble if there's only one elevator in the building.
+	 * Otherwise it might be weird if elevator receives "up" and "down" simultaniously from the same floor,
+	 * and it picks up only the people going up, while the rest waits for it to come back around in the other direction.
+	 * This mode can be enabled regardless of how many elevators are actually in the system.
+	 */
+	setSoleElevatorMode(enabled: boolean) {
+		this.soleElevatorMode = enabled
 	}
 }
