@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import ElevatorManager from '../../services/ElevatorSystem'
+import ElevatorManager from '../../services/ElevatorManager'
 import './ElevatorSystem.css'
 
 type Floor = {

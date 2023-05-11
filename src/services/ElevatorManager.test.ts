@@ -1,4 +1,4 @@
-import ElevatorManager, { Elevator } from './ElevatorSystem'
+import ElevatorManager, { Elevator } from './ElevatorManager'
 
 describe('ElevatorManager', () => {
 	const doStepsUntilNextStop = (system: ElevatorManager, elevator: Elevator) => {
