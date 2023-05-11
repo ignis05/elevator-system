@@ -2,7 +2,9 @@ name: Build and Deploy on Github Pages
 on:
   push:
     branches:
-      - master
+      - 'master'
+    paths-ignore:
+      - '**.md'
 permissions:
   contents: write
 jobs:
