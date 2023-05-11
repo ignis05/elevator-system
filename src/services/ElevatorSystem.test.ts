@@ -47,7 +47,7 @@ describe('ElevatorSystem implementation', () => {
 		stepUntilAllIdle(system)
 
 		expect(system.tasks().length).toEqual(0)
-		system.status().forEach((el) => expect(el.destination).toEqual(el.floor))
+		system.status().forEach((el) => expect(el.dropOffs.length).toEqual(0))
 	})
 
 	it('is faster than FCFS', () => {

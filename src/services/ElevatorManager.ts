@@ -134,7 +134,13 @@ export default class ElevatorManager implements ElevatorSystem {
 	// --- interface methods ---
 
 	public status(): ElevatorStatus[] {
-		return this.elevators.map((e) => ({ id: e.id, floor: e.currentFloor, destination: e.currentDestination, status: e.status }))
+		return this.elevators.map((e) => ({
+			id: e.id,
+			floor: e.currentFloor,
+			destination: e.currentDestination,
+			status: e.status,
+			dropOffs: [...e.destinations],
+		}))
 	}
 
 	public tasks(): PickupTask[] {

@@ -49,10 +49,16 @@ export interface PickupTask {
 export type Direction = 'up' | 'down'
 
 export interface ElevatorStatus {
+	/** The id of an elevator. It matches elevator's index inside ElevatorSystem#status() array. */
 	id: number
+	/** The floor this elevator is currently on. */
 	floor: number
+	/** The floor this elevator is currently going to. If the elevator isn't moving anywhere it will match the "floor" property. */
 	destination: number
+	/** The current status of the elevator, being "moving" between floors, "stopped" temporarily on a floor, or "idle" because it has nothing to do. */
 	status: ElevatorWorkStatus
+	/** List of floors selected on elevator's panel that it must visit before becoming idle. */
+	dropOffs: number[]
 }
 
 /** Elevator is "idle" when it has nothing to do, "stopped" when paused on a floor to let people in or out, and "moving" when it's passing through floors. */
