@@ -188,6 +188,14 @@ export default class ElevatorManager implements ElevatorSystem {
 			const closestIdleElevator = this.idleElevators.reduce((prev, curr) =>
 				Math.abs(curr.currentFloor - task.floor) < Math.abs(prev.currentFloor - task.floor) ? curr : prev
 			)
+
+			// closest idle elevator is already on that floor - just delete the task and set elevator to stopped
+			if (task.floor === closestIdleElevator.currentFloor) {
+				closestIdleElevator.status = 'stopped'
+				closestIdleElevator.moveDirection = task.direction
+				continue
+			}
+
 			closestIdleElevator.currentPickupTask = task
 			closestIdleElevator.status = 'moving'
 			closestIdleElevator.updateMoveDirection()

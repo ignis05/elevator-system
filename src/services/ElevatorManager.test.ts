@@ -337,4 +337,49 @@ describe('ElevatorManager', () => {
 		expect(elevator2.status).toEqual('idle')
 		expect(elevator3.status).toEqual('idle')
 	})
+
+	it('handles pickup from a floor with an elevator already present', () => {
+		const system = new ElevatorManager(1)
+		const [elevator1] = system.elevators
+
+		system.pickup(0, 'up')
+		system.step()
+
+		expect(elevator1.status).toEqual('stopped')
+		expect(system.getAllTasks().length).toEqual(0)
+	})
+
+	it('keeps direction priority after pickup from a floor with an elevator already present', () => {
+		const system = new ElevatorManager(1)
+		const [elevator1] = system.elevators
+
+		system.pickup(0, 'up')
+		system.step()
+
+		expect(elevator1.status).toEqual('stopped')
+
+		system.selectFloor(elevator1.id, -1)
+		system.selectFloor(elevator1.id, 10)
+		system.step()
+
+		expect(elevator1.currentDestination).toEqual(10)
+	})
+
+	it('handles double pickup from a floor with 2 elevators already present', () => {
+		const system = new ElevatorManager(3)
+		const [elevator1, elevator2, elevator3] = system.elevators
+
+		// pickups in both directions from floor with 3 elevators
+		system.pickup(0, 'up')
+		system.pickup(0, 'down')
+		system.step()
+
+		// elevator 1 and 2 both completed one task each, elevator 3 idles
+		expect(elevator1.status).toEqual('stopped')
+		expect(elevator1.moveDirection).toEqual('up')
+		expect(elevator2.status).toEqual('stopped')
+		expect(elevator2.moveDirection).toEqual('down')
+		expect(elevator3.status).toEqual('idle')
+		expect(system.getAllTasks().length).toEqual(0)
+	})
 })
