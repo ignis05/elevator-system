@@ -126,9 +126,12 @@ function ElevatorDemoComponent() {
 				<h4>Controls:</h4>
 				<ul>
 					<li>
+						Press <b>STEP</b> button to simulate one system's step.
+					</li>
+					<li>
 						Press <b>UP/DOWN</b> buttons to simulate calling the elevator to the specified floor.
 					</li>
-					<li>Press on any of the floors in the elevator's column, to simulate selecting that floor on that elevator's internal panel.</li>
+					<li>Press on any of the floors in the elevator columns, to simulate selecting that floor on that elevator's internal panel.</li>
 				</ul>
 				<h4>Legend:</h4>
 				<ul>
