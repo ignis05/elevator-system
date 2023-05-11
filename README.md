@@ -13,7 +13,7 @@ Alternatively, web gui is also deployed on github pages: https://ignis05.github.
 ## File structure:
 
 - Elevator algorithm - generic interface in `src/services/ElevatorSystem.ts` with implementation class in `src/services/ElevatorManager.ts`
-- React component with GUI - `src/components/ElevatorSystem/ElevatorSystem.tsx`
+- React component with GUI - `src/components/ElevatorDemoComponent/ElevatorDemoComponent.tsx`
 - Unit tests - `src/services/ElevatorManager.test.ts` and `src/services/ElevatorSystem.test.ts`
 
 ## System Behavior:

@@ -1,5 +1,5 @@
 import React from 'react'
-import ElevatorSystem from './components/ElevatorSystem/ElevatorSystem'
+import ElevatorSystem from './components/ElevatorDemoComponent/ElevatorDemoComponent'
 
 function App() {
 	return (

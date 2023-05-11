@@ -1,24 +1,31 @@
 import React, { useEffect, useState } from 'react'
 import ElevatorManager from '../../services/ElevatorManager'
-import './ElevatorSystem.css'
+import './ElevatorDemoComponent.css'
+import { ElevatorSystem } from '../../services/ElevatorSystem'
 
 type Floor = {
 	number: number
 	pickupUp: boolean
 	pickupDown: boolean
+	isTopFloor: boolean
+	isBottomFloor: boolean
 }
 
 const initElevatorCount = 3
 const initMinFloor = -2
 const initMaxFloor = 7
 
-const elevatorSystem = new ElevatorManager()
+const systemClass = new ElevatorManager()
+const systemInterface: ElevatorSystem = systemClass
 
-function ElevatorSystem() {
+function ElevatorDemoComponent() {
+	// react inputs
 	const [elevatorCount, setElevatorCount] = useState<number>(initElevatorCount)
-	const [floorsInput, setfloorsInput] = useState<string>(`${initMinFloor}:${initMaxFloor}`)
-	const [floors, setfloors] = useState<Floor[]>([])
+	const [floorsInput, setFloorsInput] = useState<string>(`${initMinFloor}:${initMaxFloor}`)
+	// object being mapped into table that represents floors and elevators
+	const [floors, setFloors] = useState<Floor[]>([])
 
+	// fetches new values from system and updates floors array
 	const updateFloors = () => {
 		const minFloor = parseInt(floorsInput.split(':')[0])
 		const maxFloor = parseInt(floorsInput.split(':')[1])
@@ -26,40 +33,41 @@ function ElevatorSystem() {
 		for (let i = minFloor; i <= maxFloor; i++) {
 			let pickupUp = false
 			let pickupDown = false
-			elevatorSystem.getAllTasks().forEach((t) => {
+			systemInterface.tasks().forEach((t) => {
 				if (t.floor !== i) return
 				if (t.direction === 'up') pickupUp = true
 				if (t.direction === 'down') pickupDown = true
 			})
-			floorsArray.push({ number: i, pickupDown, pickupUp })
+			floorsArray.push({ number: i, pickupDown, pickupUp, isTopFloor: i === maxFloor, isBottomFloor: i === minFloor })
 		}
 		floorsArray.reverse()
-		setfloors(floorsArray)
+		setFloors(floorsArray)
 	}
 
+	// update values after simulation step
+	const simulationStep = () => {
+		systemInterface.step()
+		updateFloors()
+	}
+
+	// directly updating settings on the class, instead of the interface
 	useEffect(() => {
 		const minFloor = parseInt(floorsInput.split(':')[0])
 		const maxFloor = parseInt(floorsInput.split(':')[1])
-		elevatorSystem.setFloorLimits({ top: maxFloor, bottom: minFloor })
+		systemClass.setFloorLimits({ top: maxFloor, bottom: minFloor })
 		updateFloors()
 	}, [floorsInput]) // eslint-disable-line react-hooks/exhaustive-deps
-
 	useEffect(() => {
-		elevatorSystem.setElevatorCount(elevatorCount)
+		systemClass.setElevatorCount(elevatorCount)
 		updateFloors()
 	}, [elevatorCount]) // eslint-disable-line react-hooks/exhaustive-deps
-
-	const simulationStep = () => {
-		elevatorSystem.step()
-		updateFloors()
-	}
 
 	return (
 		<div className="main">
 			<div className="headerBar">
 				Elevators:{' '}
 				<input type="number" min="0" step="1" value={elevatorCount} onChange={(e) => setElevatorCount(parseInt(e.target.value))} />
-				Floors: <input type="text" value={floorsInput} onChange={(e) => setfloorsInput(e.target.value)} />
+				Floors: <input type="text" value={floorsInput} onChange={(e) => setFloorsInput(e.target.value)} />
 				<button className="stepBtn" onClick={() => simulationStep()}>
 					STEP
 				</button>
@@ -74,10 +82,10 @@ function ElevatorSystem() {
 									<button
 										className={floor.pickupUp ? 'btPressed' : undefined}
 										onClick={() => {
-											elevatorSystem.pickup(floor.number, 'up')
+											systemInterface.pickup(floor.number, 'up')
 											updateFloors()
 										}}
-										disabled={floor.number === elevatorSystem.floorLimits?.top}
+										disabled={floor.isTopFloor}
 									>
 										UP
 									</button>
@@ -85,25 +93,25 @@ function ElevatorSystem() {
 									<button
 										className={floor.pickupDown ? 'btPressed' : undefined}
 										onClick={() => {
-											elevatorSystem.pickup(floor.number, 'down')
+											systemInterface.pickup(floor.number, 'down')
 											updateFloors()
 										}}
-										disabled={floor.number === elevatorSystem.floorLimits?.bottom}
+										disabled={floor.isBottomFloor}
 									>
 										DOWN
 									</button>
 								</td>
-								{elevatorSystem.elevators.map((el) => (
+								{systemInterface.status().map((el) => (
 									<td
-										className={`floorField  ${el.currentFloor === floor.number ? `elevator-${el.status}` : 'activeBtn'}`}
+										className={`floorField  ${el.floor === floor.number ? `elevator-${el.status}` : 'activeBtn'}`}
 										key={el.id}
 										onClick={() => {
-											elevatorSystem.selectFloor(el.id, floor.number)
+											systemInterface.selectFloor(el.id, floor.number)
 											updateFloors()
 										}}
 									>
-										{el.destinations.has(floor.number) && 'X'}
-										{el.currentDestination === floor.number && ' <---'}
+										{el.dropOffs.includes(floor.number) && 'X'}
+										{el.destination === floor.number && ' <---'}
 									</td>
 								))}
 							</tr>
@@ -140,10 +148,7 @@ function ElevatorSystem() {
 				</ul>
 				<h4>Implementation notes:</h4>
 				<ul>
-					<li>
-						The system assumes elevator speeds are fast and the stops are slows, so it prioritises utilising idle elevators over adding
-						multiple groups of people to the same elevator passing by.
-					</li>
+					<li>The system prioritises utilising idle elevators over adding multiple groups of people to the same elevator passing by.</li>
 					<li>Whenever elevator simulates stopping on the floor and opening doors, it will change its status to "stopped" for one step.</li>
 					<li>
 						If an elevator arrives at the floor it was called to pickup people from, but receives no input during the "stop" step, it
@@ -157,11 +162,10 @@ function ElevatorSystem() {
 						If both "up" and "down" are pressed on the same floor, the system is likely to send two separate elevators and assumes people
 						will only enter the elevator matching their chosen travel direction.
 					</li>
-					<li>If there's only one elevator in the system, it will complete all pickups from all floor it passes.</li>
 				</ul>
 			</div>
 		</div>
 	)
 }
 
-export default ElevatorSystem
+export default ElevatorDemoComponent
