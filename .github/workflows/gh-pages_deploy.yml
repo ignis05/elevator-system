@@ -1,0 +1,32 @@
+name: Build and Deploy on Github Pages
+on: [push]
+permissions:
+  contents: write
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          branch: gh-pages
