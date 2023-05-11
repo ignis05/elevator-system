@@ -1,5 +1,6 @@
 import ElevatorManager, { Elevator } from './ElevatorManager'
 
+// tests for implementation-specific behavior
 describe('ElevatorManager', () => {
 	const doStepsUntilNextStop = (system: ElevatorManager, elevator: Elevator) => {
 		do system.step()
