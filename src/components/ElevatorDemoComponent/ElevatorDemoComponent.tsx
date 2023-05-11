@@ -76,7 +76,7 @@ function ElevatorDemoComponent() {
 				<table>
 					<tbody>
 						{floors.map((floor) => (
-							<tr key={floor.number}>
+							<tr className="tableRow" key={floor.number}>
 								<td>{floor.number}</td>
 								<td>
 									<button
@@ -103,15 +103,18 @@ function ElevatorDemoComponent() {
 								</td>
 								{systemInterface.status().map((el) => (
 									<td
-										className={`floorField  ${el.floor === floor.number ? `elevator-${el.status}` : 'activeBtn'}`}
+										className={[
+											'floorField',
+											el.floor === floor.number ? `elevator-${el.status}` : 'activeBtn',
+											el.dropOffs.includes(floor.number) ? 'floor-selected' : '',
+										].join(' ')}
 										key={el.id}
 										onClick={() => {
 											systemInterface.selectFloor(el.id, floor.number)
 											updateFloors()
 										}}
 									>
-										{el.dropOffs.includes(floor.number) && 'X'}
-										{el.destination === floor.number && ' <---'}
+										{el.destination === floor.number && 'DEST'}
 									</td>
 								))}
 							</tr>
@@ -125,15 +128,16 @@ function ElevatorDemoComponent() {
 					<li>
 						Press <b>UP/DOWN</b> buttons to simulate calling the elevator to the specified floor.
 					</li>
-					<li>Press on any of the floors in elevator's column, to simulate selecting that floor on that elevator's internal panel.</li>
+					<li>Press on any of the floors in the elevator's column, to simulate selecting that floor on that elevator's internal panel.</li>
 				</ul>
 				<h4>Legend:</h4>
 				<ul>
 					<li>
-						<b>X</b> - This floor has been selected from this elevator's panel. The elevator will stop there to let people out.
+						<b>DEST</b> - This floor is this elevator's current destination.
 					</li>
 					<li>
-						<b>&lt;---</b> - This floor is this elevator's current destination.
+						<div className="floorField legend-field floor-selected"></div> - This floor has been selected from this elevator's panel. The
+						elevator will stop there to let people out.
 					</li>
 					<li>
 						<div className="floorField legend-field elevator-idle"></div> - Elevator is idle at this floor because it has nothing to do.
@@ -149,18 +153,21 @@ function ElevatorDemoComponent() {
 				<h4>Implementation notes:</h4>
 				<ul>
 					<li>The system prioritises utilising idle elevators over adding multiple groups of people to the same elevator passing by.</li>
-					<li>Whenever elevator simulates stopping on the floor and opening doors, it will change its status to "stopped" for one step.</li>
 					<li>
-						If an elevator arrives at the floor it was called to pickup people from, but receives no input during the "stop" step, it
-						assumes no-one entered or no button was pressed and the system might assign it another pickup task.
+						Whenever an elevator simulates stopping on the floor and opening doors, it will change its status to "stopped" for one step.
 					</li>
 					<li>
-						The elevator doesn't block in any way situations where someone calls it with "up" input and decides to go down (or the reverse).
-						However, it will prioritise going in the declared direction if multiple floors are selected on its panel after a pickup.
+						If an elevator arrives at the floor it was called to pickup people from, but receives no input during the "stop" step, it
+						assumes no-one entered, or no button was pressed, and the system might assign it another pickup task.
+					</li>
+					<li>
+						The system can't prevent, in any way, situations where someone calls an elevator with "up" input and decides to go down (or the
+						reverse). However, it will prioritise going in the declared direction if multiple floors are selected on its panel after a
+						pickup.
 					</li>
 					<li>
 						If both "up" and "down" are pressed on the same floor, the system is likely to send two separate elevators and assumes people
-						will only enter the elevator matching their chosen travel direction.
+						know to only enter the elevator matching their chosen travel direction, instead of the first one that arrives.
 					</li>
 				</ul>
 			</div>
